@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Колледж</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+/* Концепция: тетрадь в клетку. Синяя ручка — акцент, жёлтый маркер — «сейчас». */
+:root{
+  --paper:#F3F5FA; --card:#FFFFFF; --ink:#141A33; --muted:#6B7391; --line:#DDE2F0;
+  --pen:#2438C9; --pen-soft:#E4E8FB; --marker:#FFE45C; --good:#1F8F5F; --warn:#C7432B;
+  --grid:rgba(36,56,201,.07);
+}
+:root[data-theme="dark"]{
+  --paper:#0F1224; --card:#181C36; --ink:#EEF0FA; --muted:#8D95B8; --line:#2A3050;
+  --pen:#8EA0FF; --pen-soft:#232A55; --marker:#E8C93A; --good:#4CC38A; --warn:#FF8A70;
+  --grid:rgba(142,160,255,.06);
+}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Onest',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  color:var(--ink);background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:22px 22px;
+  padding:env(safe-area-inset-top,0) 0 calc(76px + env(safe-area-inset-bottom,0));
+}
+header{padding:20px 18px 6px}
+header p{color:var(--muted);font-size:14px}
+header h1{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin-top:2px}
+.group{display:inline-block;margin-top:10px;padding:4px 10px;border-radius:8px;background:var(--pen-soft);color:var(--pen);font-size:13px;font-weight:700}
+main{padding:12px 18px}
+.view{display:none}.view.on{display:block}
+
+/* дни недели */
+.days{display:flex;gap:8px;overflow-x:auto;padding:4px 0 12px;scrollbar-width:none}
+.days::-webkit-scrollbar{display:none}
+.day{flex:0 0 auto;width:52px;padding:8px 0;border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font:inherit;text-align:center;cursor:pointer}
+.day small{display:block;font-size:12px;color:var(--muted)}
+.day b{font-size:18px}
+.day.on{background:var(--pen);border-color:var(--pen);color:#fff}
+.day.on small{color:#D5DAFF}
+.day:focus-visible,.tab:focus-visible{outline:2px solid var(--pen);outline-offset:2px}
+
+/* пары */
+.lesson{display:grid;grid-template-columns:54px 1fr;gap:12px;padding:12px 0;border-top:1px dashed var(--line)}
+.lesson:first-child{border-top:0}
+.time{font-weight:700;font-size:15px}
+.time small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.lesson h3{font-size:16px;font-weight:700;line-height:1.3}
+.lesson p{font-size:13px;color:var(--muted);margin-top:2px}
+.lesson.now h3{background:linear-gradient(transparent 55%,var(--marker) 55%);display:inline}
+.tag{display:inline-block;margin-top:6px;padding:2px 8px;border-radius:6px;background:var(--marker);color:#141A33;font-size:12px;font-weight:700}
+.sheet{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:4px 14px}
+.empty{padding:28px 8px;text-align:center;color:var(--muted)}
+
+/* оценки */
+.avg{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.avg b{font-size:44px;font-weight:800;letter-spacing:-.03em;color:var(--pen)}
+.avg span{color:var(--muted);font-size:14px}
+.subj{padding:12px 0;border-top:1px dashed var(--line)}
+.subj:first-child{border-top:0}
+.subj-top{display:flex;justify-content:space-between;gap:10px;font-weight:700}
+.marks{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.m{min-width:30px;padding:3px 8px;text-align:center;border-radius:8px;border:1.5px solid var(--line);font-weight:700;font-size:14px}
+.m.g5{border-color:var(--good);color:var(--good)}
+.m.g4{border-color:var(--pen);color:var(--pen)}
+.m.g3{border-color:var(--warn);color:var(--warn)}
+.m.g2{background:var(--warn);border-color:var(--warn);color:#fff}
+
+/* объявления */
+.news{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.news time{font-size:12px;color:var(--muted)}
+.news h3{font-size:16px;margin:4px 0}
+.news p{font-size:14px;color:var(--muted);line-height:1.45}
+.news.pin{border-color:var(--pen)}
+
+/* сервисы */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.svc{padding:14px;border:1.5px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.svc b{display:block;font-size:15px}
+.svc span{font-size:12px;color:var(--muted)}
+.svc:active{background:var(--pen-soft)}
+
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1.5px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0))}
+.tab{flex:1;padding:8px 0;border:0;background:none;color:var(--muted);font:inherit;font-size:12px;font-weight:500;cursor:pointer;border-radius:10px}
+.tab svg{display:block;margin:0 auto 2px;width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--pen);font-weight:700}
+@media (prefers-reduced-motion:no-preference){.view.on{animation:in .18s ease-out}@keyframes in{from{opacity:0}to{opacity:1}}}
+</style>
+</head>
+<body>
+<header>
+  <p id="hello">Привет</p>
+  <h1 id="title">Расписание</h1>
+  <span class="group" id="group"></span>
+</header>
+
+<main>
+  <section class="view on" id="v-schedule">
+    <div class="days" id="days" role="tablist" aria-label="Дни недели"></div>
+    <div class="sheet" id="lessons"></div>
+  </section>
+
+  <section class="view" id="v-grades">
+    <div class="avg"><b id="avg">—</b><span>средний балл за семестр</span></div>
+    <div class="sheet" id="subjects"></div>
+  </section>
+
+  <section class="view" id="v-news"><div id="news"></div></section>
+
+  <section class="view" id="v-more">
+    <div class="grid" id="services"></div>
+  </section>
+</main>
+
+<nav>
+  <button class="tab on" data-v="schedule" data-t="Расписание"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>Расписание</button>
+  <button class="tab" data-v="grades" data-t="Оценки"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M21 19H3"/></svg>Оценки</button>
+  <button class="tab" data-v="news" data-t="Объявления"><svg viewBox="0 0 24 24"><path d="M4 10v4h3l7 4V6L7 10H4zM18 9a4 4 0 010 6"/></svg>Объявления</button>
+  <button class="tab" data-v="more" data-t="Сервисы"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2"/></svg>Сервисы</button>
+</nav>
+
+<script>
+const tg = window.Telegram && Telegram.WebApp;
+if (tg) {
+  tg.ready(); tg.expand();
+  document.documentElement.dataset.theme = tg.colorScheme;
+  tg.onEvent('themeChanged', () => document.documentElement.dataset.theme = tg.colorScheme);
+} else if (matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.documentElement.dataset.theme = 'dark';
+}
+const haptic = () => tg && tg.HapticFeedback && tg.HapticFeedback.selectionChanged();
+
+/* ---------- ДАННЫЕ ----------
+   Сейчас демо. Чтобы подключить реальный бэкенд, замените на:
+   const data = await (await fetch('/api/me', {headers:{'X-Init-Data': tg.initData}})).json();
+   и проверяйте initData на сервере (см. bot.py → check_init_data). */
+const DATA = {
+  group: 'ИС-31',
+  schedule: { // 1 = Пн ... 6 = Сб
+    1: [['08:30','10:00','Математика','ауд. 214 · Петрова А. С.'],['10:10','11:40','Основы программирования','ауд. 305 · Кузнецов Д. И.']],
+    2: [['10:10','11:40','Базы данных','ауд. 305 · Орлов П. В.'],['12:10','13:40','Английский язык','ауд. 118 · Смирнова Е. А.'],['13:50','15:20','Физкультура','спортзал']],
+    3: [['08:30','10:00','Операционные системы','ауд. 301 · Кузнецов Д. И.'],['10:10','11:40','Математика','ауд. 214 · Петрова А. С.']],
+    4: [['10:10','11:40','Веб-разработка','ауд. 305 · Орлов П. В.'],['12:10','13:40','История','ауд. 220 · Громов Н. Н.']],
+    5: [['08:30','10:00','Базы данных','ауд. 305 · Орлов П. В.'],['10:10','11:40','Основы программирования','ауд. 305 · Кузнецов Д. И.']],
+    6: []
+  },
+  grades: [
+    {name:'Математика', marks:[5,4,5,4]},
+    {name:'Основы программирования', marks:[5,5,4,5,5]},
+    {name:'Базы данных', marks:[4,3,4]},
+    {name:'Английский язык', marks:[5,5]},
+    {name:'История', marks:[3,4,2,4]}
+  ],
+  news: [
+    {date:'21 нояб.', title:'Зимняя сессия: допуск до 15 декабря', text:'Закройте долги по практическим работам до 15 декабря — иначе допуска к экзаменам не будет.', pin:true},
+    {date:'19 нояб.', title:'День открытых дверей', text:'Нужны волонтёры из групп 2–3 курса. Запись у куратора.'},
+    {date:'17 нояб.', title:'Замена в четверг', text:'Веб-разработка переносится в ауд. 307.'}
+  ],
+  services: [
+    ['Справка об обучении','Заказать, 2 дня'],['Запись к куратору','Выбрать время'],
+    ['Библиотека','Каталог и брони'],['Столовая','Меню на сегодня'],
+    ['Общежитие','Заявки и ремонт'],['Контакты','Деканат, кабинеты']
+  ]
+};
+
+/* ---------- ВСПОМОГАТЕЛЬНОЕ ---------- */
+const $ = s => document.querySelector(s);
+const DN = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+const MIN = t => { const [h,m] = t.split(':'); return +h*60 + +m; };
+const today = new Date();
+let selected = today.getDay() === 0 ? 1 : today.getDay();
+
+/* ---------- РАСПИСАНИЕ ---------- */
+function weekDates(){
+  const d0 = new Date(today); const dow = today.getDay() || 7;
+  d0.setDate(today.getDate() - dow + 1);
+  return [...Array(6)].map((_, i) => { const d = new Date(d0); d.setDate(d0.getDate() + i); return d; });
+}
+function renderDays(){
+  $('#days').innerHTML = weekDates().map((d, i) =>
+    `<button class="day ${i+1===selected?'on':''}" role="tab" aria-selected="${i+1===selected}" data-d="${i+1}"><small>${DN[d.getDay()]}</small><b>${d.getDate()}</b></button>`).join('');
+}
+function renderLessons(){
+  const list = DATA.schedule[selected] || [];
+  const isToday = selected === (today.getDay() || 7);
+  const nowM = today.getHours()*60 + today.getMinutes();
+  $('#lessons').innerHTML = list.length ? list.map(([a,b,name,info]) => {
+    const now = isToday && nowM >= MIN(a) && nowM < MIN(b);
+    return `<div class="lesson ${now?'now':''}"><div class="time">${a}<small>${b}</small></div><div><h3>${name}</h3><p>${info}</p>${now?'<span class="tag">Идёт сейчас</span>':''}</div></div>`;
+  }).join('') : '<div class="empty">В этот день пар нет</div>';
+}
+$('#days').addEventListener('click', e => {
+  const b = e.target.closest('.day'); if (!b) return;
+  selected = +b.dataset.d; haptic(); renderDays(); renderLessons();
+});
+
+/* ---------- ОЦЕНКИ ---------- */
+function renderGrades(){
+  const all = DATA.grades.flatMap(s => s.marks);
+  $('#avg').textContent = all.length ? (all.reduce((a,b)=>a+b,0)/all.length).toFixed(2) : '—';
+  $('#subjects').innerHTML = DATA.grades.map(s => {
+    const a = (s.marks.reduce((x,y)=>x+y,0)/s.marks.length).toFixed(1);
+    return `<div class="subj"><div class="subj-top"><span>${s.name}</span><span>${a}</span></div><div class="marks">${s.marks.map(m=>`<span class="m g${m}">${m}</span>`).join('')}</div></div>`;
+  }).join('');
+}
+
+/* ---------- ОБЪЯВЛЕНИЯ / СЕРВИСЫ ---------- */
+function renderNews(){
+  $('#news').innerHTML = DATA.news.map(n =>
+    `<article class="news ${n.pin?'pin':''}"><time>${n.pin?'Закреплено · ':''}${n.date}</time><h3>${n.title}</h3><p>${n.text}</p></article>`).join('');
+}
+function renderServices(){
+  $('#services').innerHTML = DATA.services.map(([t,s]) => `<button class="svc"><b>${t}</b><span>${s}</span></button>`).join('');
+}
+$('#services').addEventListener('click', e => {
+  const b = e.target.closest('.svc'); if (!b) return;
+  haptic();
+  const msg = b.querySelector('b').textContent + ': раздел пока в разработке';
+  tg && tg.showAlert ? tg.showAlert(msg) : alert(msg);
+});
+
+/* ---------- НАВИГАЦИЯ ---------- */
+document.querySelector('nav').addEventListener('click', e => {
+  const t = e.target.closest('.tab'); if (!t) return;
+  haptic();
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === t));
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === 'v-' + t.dataset.v));
+  $('#title').textContent = t.dataset.t;
+  window.scrollTo(0, 0);
+});
+
+/* ---------- СТАРТ ---------- */
+const user = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+$('#hello').textContent = user ? `Привет, ${user.first_name}` : 'Привет';
+$('#group').textContent = 'Группа ' + DATA.group;
+renderDays(); renderLessons(); renderGrades(); renderNews(); renderServices();
+</script>
+</body>
+</html>
